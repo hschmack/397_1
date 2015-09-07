@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Tutorial 1</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Setting</string>
+    <string name="generate_button_label">Generate Pattern Randomly</string>
+    <string name="practice">Practice</string>
+    <string name="Designer">Personal Pattern Designer</string>
+    <string name="start_log_data">Start Logging</string>
+    <string name="stop_log_data">Stop Logging</string>
+
+</resources>
