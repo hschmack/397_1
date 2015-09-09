@@ -45,43 +45,57 @@ public class PatternGenerator
     {
         List<Point> pattern = new ArrayList<Point>();
         //HOMEWORK SECTION 1
-        Log.d("Tag1", "In GetPattern");
+        Log.d("Tag1", "In GetPattern"); //REMOVE BEFORE SUBMISSION
         int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
 
-        while (pattern.size() < patternLength) { //iterate until we have a pattern of the right size
-            Point startPoint = mAllNodes.get( mRng.nextInt(mAllNodes.size()) );
-            pattern.add(startPoint);
-
+        while (pattern.size() != patternLength) { //iterate until we have a pattern of the right size
+            Point startPoint;
+            if( pattern.isEmpty() ) {
+                startPoint = mAllNodes.get(mRng.nextInt(mAllNodes.size()));
+                pattern.add(startPoint);
+            } else {
+                startPoint = mAllNodes.get( mAllNodes.size() - 1 );
+            }
             // now that the initial point is chosen, remove it from the list of available nodes
             mAllNodes.remove(startPoint);
             List<Point> candidateList = new ArrayList<Point>(mAllNodes);
 
-            // REMOVE 'UNUSED' POINTS
+            // REMOVE 'UNUSED' POINTS + points already in the pattern
             Iterator<Point> iter = candidateList.iterator();
             while (iter.hasNext()) {
-                Log.d("Tag1", "Got inside loop");
                 Point candidate = iter.next();
+
+                if ( pattern.contains(candidate) ){
+                    iter.remove();
+                    Log.d("P", "The point: " + candidate.toString() + " already exists in the pattern, breaking"); //REMOVE BEFORE SUBMISSION
+                    break;
+                }
                 int deltaX = candidate.x - startPoint.x;
                 int deltaY = candidate.y - startPoint.y;
-                int gcd = computeGcd(deltaX, deltaY);
+                int gcd = Math.abs(computeGcd(deltaX, deltaY));
+                Log.d("Tag1", "Considering candidate: " + candidate.toString() +" from start point: " + startPoint.toString()+ " WITH GCD: " + gcd); //REMOVE BEFORE SUBMISSION
 
                 if (gcd > 1) {
                     for (int j = 1; j < gcd; j++){
                         int unusedX = startPoint.x + deltaX / (gcd * j);
                         int unusedY = startPoint.y + deltaY / (gcd * j);
+                        Log.d("P", "considering point : (" + unusedX + ", "+unusedY); //REMOVE BEFORE SUBMISSION
 
-                        if ( (unusedX >= 0 && unusedX <= 9) && (unusedY >= 0 && unusedY <= 9)){
+                        if ( (unusedX >= 0 && unusedX <= 2) && (unusedY >= 0 && unusedY <= 2)){
+                            Log.d("P", "Point : (" + unusedX + ", "+unusedY + " is a valid point, removing: " + candidate.toString() ); //REMOVE BEFORE SUBMISSION
                             iter.remove();
                         }
                     }
                 }
             }
             //this should add a valid point to the pattern
-            pattern.add(candidateList.get (mRng.nextInt( candidateList.size()) ) );
+            Point toAdd = candidateList.get (mRng.nextInt( candidateList.size()) );
+            pattern.add(toAdd);
+            mAllNodes.remove(toAdd);
         }
 
         for (Point p : pattern){
-            Log.d("P", "(" + p.x + ", " + p.y + ")");
+            Log.d("P", p.toString());
         }
         return pattern;
     }
