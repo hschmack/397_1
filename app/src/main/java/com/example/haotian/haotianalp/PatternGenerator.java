@@ -18,7 +18,10 @@ You should have received a copy of the GNU General Public License along with
 */
 package com.example.haotian.haotianalp;
 
+import android.util.Log;
+
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -42,24 +45,47 @@ public class PatternGenerator
     {
         List<Point> pattern = new ArrayList<Point>();
         //HOMEWORK SECTION 1
+        Log.d("Tag1", "In GetPattern");
         int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
-        Point startPoint = mAllNodes.get( mRng.nextInt(mAllNodes.size()) );
-        pattern.add(startPoint);
-        patternLength --;
 
-        // now that the initial point is chosen, remove it from the list of available nodes
-        mAllNodes.remove(startPoint);
+        while (pattern.size() < patternLength) { //iterate until we have a pattern of the right size
+            Point startPoint = mAllNodes.get( mRng.nextInt(mAllNodes.size()) );
+            pattern.add(startPoint);
 
+            // now that the initial point is chosen, remove it from the list of available nodes
+            mAllNodes.remove(startPoint);
+            List<Point> candidateList = new ArrayList<Point>(mAllNodes);
 
+            // REMOVE 'UNUSED' POINTS
+            Iterator<Point> iter = candidateList.iterator();
+            while (iter.hasNext()) {
+                Log.d("Tag1", "Got inside loop");
+                Point candidate = iter.next();
+                int deltaX = candidate.x - startPoint.x;
+                int deltaY = candidate.y - startPoint.y;
+                int gcd = computeGcd(deltaX, deltaY);
 
+                if (gcd > 1) {
+                    for (int j = 1; j < gcd; j++){
+                        int unusedX = startPoint.x + deltaX / (gcd * j);
+                        int unusedY = startPoint.y + deltaY / (gcd * j);
+
+                        if ( (unusedX >= 0 && unusedX <= 9) && (unusedY >= 0 && unusedY <= 9)){
+                            iter.remove();
+                        }
+                    }
+                }
+            }
+            //this should add a valid point to the pattern
+            pattern.add(candidateList.get (mRng.nextInt( candidateList.size()) ) );
+        }
+
+        for (Point p : pattern){
+            Log.d("P", "(" + p.x + ", " + p.y + ")");
+        }
         return pattern;
     }
-    private boolean validCandidate(Point a, Point b)
-    {
-        // if
 
-        return true;
-    }
     //
     // Accessors / Mutators
     //

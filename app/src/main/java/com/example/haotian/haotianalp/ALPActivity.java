@@ -79,6 +79,12 @@ public class ALPActivity extends Activity {
         setContentView(R.layout.activity_alp);
         mPatternView = (LockPatternView) findViewById(R.id.pattern_view);
         mGenerateButton = (Button) findViewById(R.id.generate_button);
+        mGenerateButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v){
+                //EVENTUALLY CALL GETPATTERN
+                mGenerator.getPattern();
+            }
+        });
 
         mPracticeToggle = (ToggleButton) findViewById(R.id.practice_toggle);
 

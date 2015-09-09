@@ -23,7 +23,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
-import android.os.Vibrator;
+//import android.os.Vibrator;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -66,7 +66,7 @@ public class LockPatternView extends View
     protected HighlightMode mPracticeFailureMode;
     protected HighlightMode mPracticeSuccessMode;
     protected Handler mHandler;
-    protected Vibrator mVibrator;
+    //protected Vibrator mVibrator;
     protected boolean mTactileFeedback;
     private VelocityTracker mVelocityTracker = null;
     protected List<Point> mCurrentPattern;
@@ -89,8 +89,8 @@ public class LockPatternView extends View
         mPracticeFailureMode = new FailureHighlight();
         mPracticeSuccessMode = new SuccessHighlight();
         mHandler = new Handler();
-        mVibrator = (Vibrator) getContext()         //      ?????
-            .getSystemService(Context.VIBRATOR_SERVICE);
+        //mVibrator = (Vibrator) getContext()         //      ?????
+         //   .getSystemService(Context.VIBRATOR_SERVICE);
 
         mEdgePaint = new Paint();
         mEdgePaint.setColor(EDGE_COLOR);
@@ -301,7 +301,7 @@ public class LockPatternView extends View
                 {
                     if(mTactileFeedback)
                     {
-                        mVibrator.vibrate(TACTILE_FEEDBACK_DURATION);
+                        //mVibrator.vibrate(TACTILE_FEEDBACK_DURATION);
                     }
                     Point newPoint = new Point(mTouchCell);
                     // did we skip over any nodes?  Include them first since
