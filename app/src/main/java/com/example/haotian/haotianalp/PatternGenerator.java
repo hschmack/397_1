@@ -44,6 +44,7 @@ public class PatternGenerator
     public List<Point> getPattern()
     {
         List<Point> pattern = new ArrayList<Point>();
+        List<Point> allNodes = new ArrayList<Point>(mAllNodes);
         //HOMEWORK SECTION 1
         Log.d("Tag1", "In GetPattern"); //REMOVE BEFORE SUBMISSION
         int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
@@ -51,14 +52,14 @@ public class PatternGenerator
         while (pattern.size() != patternLength) { //iterate until we have a pattern of the right size
             Point startPoint;
             if( pattern.isEmpty() ) {
-                startPoint = mAllNodes.get(mRng.nextInt(mAllNodes.size()));
+                startPoint = allNodes.get(mRng.nextInt(mAllNodes.size()));
                 pattern.add(startPoint);
             } else {
-                startPoint = mAllNodes.get( mAllNodes.size() - 1 );
+                startPoint = pattern.get( pattern.size() - 1 );
             }
             // now that the initial point is chosen, remove it from the list of available nodes
-            mAllNodes.remove(startPoint);
-            List<Point> candidateList = new ArrayList<Point>(mAllNodes);
+            allNodes.remove(startPoint);
+            List<Point> candidateList = new ArrayList<Point>(allNodes);
 
             // REMOVE 'UNUSED' POINTS + points already in the pattern
             Iterator<Point> iter = candidateList.iterator();
@@ -91,7 +92,7 @@ public class PatternGenerator
             //this should add a valid point to the pattern
             Point toAdd = candidateList.get (mRng.nextInt( candidateList.size()) );
             pattern.add(toAdd);
-            mAllNodes.remove(toAdd);
+            allNodes.remove(toAdd);
         }
 
         for (Point p : pattern){
