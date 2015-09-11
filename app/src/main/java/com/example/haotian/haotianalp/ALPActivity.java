@@ -82,8 +82,9 @@ public class ALPActivity extends Activity {
 
         mGenerateButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v){
-                //EVENTUALLY CALL GETPATTERN
-                mGenerator.getPattern();
+                //
+                mPatternView.setPattern(mGenerator.getPattern());
+                mPatternView.invalidate();
             }
         });
 
