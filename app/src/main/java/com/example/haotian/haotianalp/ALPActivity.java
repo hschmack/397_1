@@ -67,6 +67,7 @@ public class ALPActivity extends Activity {
     String mTimestamp;
     private int counter=0;
     private String myStr = "";
+    private float[] touchData;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,6 +80,7 @@ public class ALPActivity extends Activity {
         setContentView(R.layout.activity_alp);
         mPatternView = (LockPatternView) findViewById(R.id.pattern_view);
         mGenerateButton = (Button) findViewById(R.id.generate_button);
+        touchData = new float[6]; //posX posY velX velY pressure size
 
         mGenerateButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v){
@@ -105,28 +107,40 @@ public class ALPActivity extends Activity {
     public boolean onTouchEvent(MotionEvent event){
 
         int action = event.getActionMasked();
+        VelocityTracker velocity = VelocityTracker.obtain();
 
         switch(action) {
-            case (MotionEvent.ACTION_DOWN) :
-                Log.d("DEBUG_TAG","Action was DOWN " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
+            case (MotionEvent.ACTION_DOWN):
+                Log.d("DEBUG_TAG", "Action was DOWN " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
+                event.getX();
+                event.getY();
+                event.getPressure();
+                setTouchData(event.getX(), event.getY(), 0, 0, event.getPressure(), event.getSize()); // is there no movement on Action down?
+                // WRITE TO CSV
                 return true;
             case (MotionEvent.ACTION_MOVE) :
                 Log.d("DEBUG_TAG","Action was MOVE");
-                return true;
-            case (MotionEvent.ACTION_UP) :
-                Log.d("DEBUG_TAG","Action was UP");
-                return true;
-            case (MotionEvent.ACTION_CANCEL) :
-                Log.d("DEBUG_TAG","Action was CANCEL");
-                return true;
-            case (MotionEvent.ACTION_OUTSIDE) :
-                Log.d("DEBUG_TAG","Movement occurred outside bounds " +
-                        "of current screen element");
+                velocity.addMovement(event);
+                velocity.computeCurrentVelocity(1000);
+                float xVelocity = velocity.getXVelocity();
+                float yVelocity = velocity.getYVelocity();
+                setTouchData(event.getX(), event.getY(), xVelocity, yVelocity, event.getPressure(), event.getSize());
+                //WRITE TO CSV
                 return true;
             default :
                 return super.onTouchEvent(event);
         }
     }
+
+    public void setTouchData(float x, float y, float velX, float velY, float pressure, float size){
+        touchData[0] = x;
+        touchData[1] = y;
+        touchData[2] = velX;
+        touchData[3] = velY;
+        touchData[4] = pressure;
+        touchData[5] = size;
+    }
+
     @Override
     protected void onResume()
     {
