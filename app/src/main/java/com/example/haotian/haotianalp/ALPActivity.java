@@ -82,7 +82,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         setContentView(R.layout.activity_alp);
         mPatternView = (LockPatternView) findViewById(R.id.pattern_view);
         mGenerateButton = (Button) findViewById(R.id.generate_button);
-        touchData = new float[6]; //posX posY velX velY pressure size
+        touchData = new float[25]; //posX posY velX velY pressure size + all sensor data
 
         mGenerateButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v){
@@ -121,24 +121,25 @@ public class ALPActivity extends Activity implements SensorEventListener{
                     "TYPE_MAGNETIC_FIELD_X", "TYPE_MAGNETIC_FIELD_Y", "TYPE_MAGNETIC_FIELD_Z", "TYPE_GRYOSCOPE_X",
                     "TYPE_GRYOSCOPE_Y", "TYPE_GRYOSCOPE_Z", "TYPE_ROTATION_VECTOR_X", "TYPE_ROTATION_VECTOR_Y",
                     "TYPE_ROTATION_VECTOR_Z", "TYPE_LINEAR_ACCELERATION_X", "TYPE_LINEAR_ACCELERATION_Y",
-                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z"
+                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z", "mCurrentPattern", "Counter"
             };
 
             //initialize the first row of the csv, this row only contains column headings
+            StringBuilder sb = new StringBuilder();
             for (String heading : headings) {
-                StringBuilder sb = new StringBuilder();
                 sb.append(heading);
                 sb.append(',');
+            }
                 sb.append("\n");
                 bufferedWriter.write(sb.toString());
                 bufferedWriter.flush();
-            }
+
         } catch (java.io.IOException e){
             Log.d("IO", "CANT CREATE BUFFERED OR FILE READER");
         }
 
         //initialise Sensors
-        mSensorManager = (SensorManager) getSystemService((Context.SENSOR_SERVICE));
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         mGravity       = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY            );
         mGyroscope     = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE          );
@@ -147,9 +148,21 @@ public class ALPActivity extends Activity implements SensorEventListener{
         mRotation      = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR    );
         myLinearAcc    = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
+        mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL      );
+        mSensorManager.registerListener(this, mRotation, SensorManager.SENSOR_DELAY_NORMAL     );
+        mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL    );
+        mSensorManager.registerListener(this, myLinearAcc, SensorManager.SENSOR_DELAY_NORMAL   );
+        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL );
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+
     }
 
     public boolean onTouchEvent(MotionEvent event){
+        //if the app is not in practice mode, then we dont care about the touch data
+        if(!mPatternView.mPracticeMode){
+            return super.onTouchEvent(event);
+        }
 
         int action = event.getActionMasked();
         VelocityTracker velocity = VelocityTracker.obtain();
@@ -184,7 +197,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         //array order is: Timestamp, AccelX, AccelY, AccelZ, MagnetX, MagnetY, MagnetZ,
         // GyroscopeX, GyroscopeY, GyroscopeZ, RotationVecX, RoationVecY, RotationVecZ
         // LinAccX, LinAccY, LinAccZ, GravX, GravY, gravZ
-        touchData[6] = event.timestamp;
+        touchData[0] = event.timestamp;
 
         switch(event.sensor.getType()){ //TIMESTAMP IS ALWAYS 6
             case(Sensor.TYPE_ACCELEROMETER): //indices 7,8,9
@@ -214,33 +227,6 @@ public class ALPActivity extends Activity implements SensorEventListener{
             default:
                 //no relevant sensor data
         }
-        //Do we write to the bufferedWriter here? Only one sensor is being recoreded at a time here?
-        //maybe write to the bufferedWriter when every element of the array is nonnull?
-        if (readyToWriteSensor()){
-            writeTouchData();
-            resetTouchData();
-        }
-    }
-
-    /**
-     * Resets touchData array buy reverting everything to 0,0
-     */
-    public void resetTouchData(){
-        for(int i=0; i<touchData.length-1; i++){
-            touchData[i] = 0;
-        }
-    }
-
-    /**
-     * @return true if all the sensor data elements of touchData are nonnull
-     */
-    public boolean readyToWriteSensor(){
-        for ( int i=6; i< touchData.length-1; i++){
-            if(touchData[i] == 0){
-                return false; // This can technically be wrong, but i doubt we will ever get 0.0 sensor measurement
-            }
-        }
-        return true;
     }
 
     @Override
@@ -249,12 +235,12 @@ public class ALPActivity extends Activity implements SensorEventListener{
     }
 
     public void setTouchData(float x, float y, float velX, float velY, float pressure, float size){
-        touchData[0] = x;
-        touchData[1] = y;
-        touchData[2] = velX;
-        touchData[3] = velY;
-        touchData[4] = pressure;
-        touchData[5] = size;
+        touchData[1] = x;
+        touchData[2] = y;
+        touchData[3] = velX;
+        touchData[4] = velY;
+        touchData[5] = pressure;
+        touchData[6] = size;
     }
 
     public void writeTouchData(){
@@ -264,6 +250,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 sb.append(data);
                 sb.append(',');
             }
+            sb.append(convertListToString(mPatternView.getPattern()) + ',');
+            sb.append(counter);
             sb.append('\n');
             bufferedWriter.write(sb.toString());
             bufferedWriter.flush();
@@ -273,24 +261,19 @@ public class ALPActivity extends Activity implements SensorEventListener{
         }
     }
 
-    public void writeTouchData2(){
-        String FILENAME = "touch_data.csv";
-        String entry = String.valueOf(touchData[0]) + "," +
-                String.valueOf(touchData[1]) + "," +
-                String.valueOf(touchData[2]) + "," +
-                String.valueOf(touchData[3]) + "," +
-                String.valueOf(touchData[4]) + "," +
-                String.valueOf(touchData[5]) + "\n";
-        try{
-            FileOutputStream out = openFileOutput(FILENAME, Context.MODE_APPEND);
-            out.write(entry.getBytes());
-            out.flush();
-            Log.d("File Entry", entry);
-            out.close();
-        } catch(Exception e){
-            e.printStackTrace();
+    // there HAS to be a way to do this natively
+    public String convertListToString(List<Point> pattern){
+        StringBuilder sb = new StringBuilder();
+        sb.append("\"[");
+        for(Point p : pattern){
+            sb.append(p.toString());
+            sb.append(',');
         }
+        sb.append("]\"");
+        return sb.toString();
     }
+
+
 
     @Override
     protected void onResume()
