@@ -23,6 +23,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -37,7 +38,7 @@ import java.util.List;
 import java.util.Locale;
 
 
-public class ALPActivity extends Activity {
+public class ALPActivity extends Activity implements SensorEventListener{
     protected LockPatternView mPatternView;
     protected PatternGenerator mGenerator;
     protected Button mGenerateButton;
@@ -54,6 +55,7 @@ public class ALPActivity extends Activity {
     private static final String TAG = "SensorActivity";
     private static final String TAGmotion = "motionEvent";
     private SensorManager mSensorManager = null;
+
 
     public List<Sensor> deviceSensors;
     private  Sensor mAccelerometer, mMagnetometer, mGyroscope, mRotation, mGravity, myLinearAcc;
@@ -97,10 +99,53 @@ public class ALPActivity extends Activity {
                 new ToggleButton.OnCheckedChangeListener() {
                     public void onCheckedChanged(CompoundButton buttonView,
                                                  boolean isChecked) {
-
+                        mPatternView.setPracticeMode(isChecked);
+                        mGenerateButton.setEnabled(!isChecked);
+                        mPatternView.invalidate();
 
                     }
                 });
+
+        //initialize the bufferedWriter
+        File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        File myFile = new File(dcim, "touchdata.csv");
+        if (myFile.exists()){
+            myFile.delete(); //delete the touch data file if it already exists
+        }
+        //then create a new one
+        file = new File(dcim, "touchdata.csv"); //fileName
+        try {
+            bufferedWriter = new BufferedWriter( new FileWriter(file) );
+            String[] headings = {"position_X", "position_Y", "velocity_X", "velocity_Y", "pressure", "size", "timestamp",
+                    "TYPE_ACCELEROMETER_X", "TYPE_ACCELEROMETERY", "TYPE_ACCELEROMETER_Z",
+                    "TYPE_MAGNETIC_FIELD_X", "TYPE_MAGNETIC_FIELD_Y", "TYPE_MAGNETIC_FIELD_Z", "TYPE_GRYOSCOPE_X",
+                    "TYPE_GRYOSCOPE_Y", "TYPE_GRYOSCOPE_Z", "TYPE_ROTATION_VECTOR_X", "TYPE_ROTATION_VECTOR_Y",
+                    "TYPE_ROTATION_VECTOR_Z", "TYPE_LINEAR_ACCELERATION_X", "TYPE_LINEAR_ACCELERATION_Y",
+                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z"
+            };
+
+            //initialize the first row of the csv, this row only contains column headings
+            for (String heading : headings) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(heading);
+                sb.append(',');
+                sb.append("\n");
+                bufferedWriter.write(sb.toString());
+                bufferedWriter.flush();
+            }
+        } catch (java.io.IOException e){
+            Log.d("IO", "CANT CREATE BUFFERED OR FILE READER");
+        }
+
+        //initialise Sensors
+        mSensorManager = (SensorManager) getSystemService((Context.SENSOR_SERVICE));
+
+        mGravity       = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY            );
+        mGyroscope     = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE          );
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER      );
+        mMagnetometer  = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD     );
+        mRotation      = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR    );
+        myLinearAcc    = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
     }
 
@@ -111,25 +156,96 @@ public class ALPActivity extends Activity {
 
         switch(action) {
             case (MotionEvent.ACTION_DOWN):
-                Log.d("DEBUG_TAG", "Action was DOWN " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
+               // Log.d("DEBUG_TAG", "Action was DOWN " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
                 event.getX();
                 event.getY();
                 event.getPressure();
                 setTouchData(event.getX(), event.getY(), 0, 0, event.getPressure(), event.getSize()); // is there no movement on Action down?
                 // WRITE TO CSV
+                writeTouchData();
                 return true;
             case (MotionEvent.ACTION_MOVE) :
-                Log.d("DEBUG_TAG","Action was MOVE");
+              //  Log.d("DEBUG_TAG","Action was MOVE");
                 velocity.addMovement(event);
                 velocity.computeCurrentVelocity(1000);
                 float xVelocity = velocity.getXVelocity();
                 float yVelocity = velocity.getYVelocity();
                 setTouchData(event.getX(), event.getY(), xVelocity, yVelocity, event.getPressure(), event.getSize());
                 //WRITE TO CSV
+                writeTouchData();
                 return true;
             default :
                 return super.onTouchEvent(event);
         }
+    }
+
+    @Override
+    public final void onSensorChanged (SensorEvent event){
+        //array order is: Timestamp, AccelX, AccelY, AccelZ, MagnetX, MagnetY, MagnetZ,
+        // GyroscopeX, GyroscopeY, GyroscopeZ, RotationVecX, RoationVecY, RotationVecZ
+        // LinAccX, LinAccY, LinAccZ, GravX, GravY, gravZ
+        touchData[6] = event.timestamp;
+
+        switch(event.sensor.getType()){ //TIMESTAMP IS ALWAYS 6
+            case(Sensor.TYPE_ACCELEROMETER): //indices 7,8,9
+                touchData[7] = event.values[0];
+                touchData[8] = event.values[1];
+                touchData[9] = event.values[2];
+            case(Sensor.TYPE_MAGNETIC_FIELD): //indices 10,11,12
+                touchData[10] = event.values[0];
+                touchData[11] = event.values[1];
+                touchData[12] = event.values[2];
+            case(Sensor.TYPE_GYROSCOPE): //indices 13,14,15
+                touchData[13] = event.values[0];
+                touchData[14] = event.values[1];
+                touchData[15] = event.values[2];
+            case(Sensor.TYPE_ROTATION_VECTOR): //indices 16,17,18
+                touchData[16] = event.values[0];
+                touchData[17] = event.values[1];
+                touchData[18] = event.values[2];
+            case(Sensor.TYPE_LINEAR_ACCELERATION): //indices 19,20,21
+                touchData[19] = event.values[0];
+                touchData[20] = event.values[1];
+                touchData[21] = event.values[2];
+            case(Sensor.TYPE_GRAVITY): //indices 22,23,24
+                touchData[22] = event.values[0];
+                touchData[23] = event.values[1];
+                touchData[24] = event.values[2];
+            default:
+                //no relevant sensor data
+        }
+        //Do we write to the bufferedWriter here? Only one sensor is being recoreded at a time here?
+        //maybe write to the bufferedWriter when every element of the array is nonnull?
+        if (readyToWriteSensor()){
+            writeTouchData();
+            resetTouchData();
+        }
+    }
+
+    /**
+     * Resets touchData array buy reverting everything to 0,0
+     */
+    public void resetTouchData(){
+        for(int i=0; i<touchData.length-1; i++){
+            touchData[i] = 0;
+        }
+    }
+
+    /**
+     * @return true if all the sensor data elements of touchData are nonnull
+     */
+    public boolean readyToWriteSensor(){
+        for ( int i=6; i< touchData.length-1; i++){
+            if(touchData[i] == 0){
+                return false; // This can technically be wrong, but i doubt we will ever get 0.0 sensor measurement
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public final void onAccuracyChanged(Sensor sensor, int accuracy){
+        // Do something here if sensor accuracy changes;
     }
 
     public void setTouchData(float x, float y, float velX, float velY, float pressure, float size){
@@ -139,6 +255,41 @@ public class ALPActivity extends Activity {
         touchData[3] = velY;
         touchData[4] = pressure;
         touchData[5] = size;
+    }
+
+    public void writeTouchData(){
+        StringBuilder sb = new StringBuilder();
+        try {
+            for (float data : touchData){
+                sb.append(data);
+                sb.append(',');
+            }
+            sb.append('\n');
+            bufferedWriter.write(sb.toString());
+            bufferedWriter.flush();
+            Log.d("IO", "WROTE to the csv file: "+ sb.toString());
+        } catch (java.io.IOException e){
+            Log.d("IO", "Failed to write to the csv file");
+        }
+    }
+
+    public void writeTouchData2(){
+        String FILENAME = "touch_data.csv";
+        String entry = String.valueOf(touchData[0]) + "," +
+                String.valueOf(touchData[1]) + "," +
+                String.valueOf(touchData[2]) + "," +
+                String.valueOf(touchData[3]) + "," +
+                String.valueOf(touchData[4]) + "," +
+                String.valueOf(touchData[5]) + "\n";
+        try{
+            FileOutputStream out = openFileOutput(FILENAME, Context.MODE_APPEND);
+            out.write(entry.getBytes());
+            out.flush();
+            Log.d("File Entry", entry);
+            out.close();
+        } catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
     @Override
