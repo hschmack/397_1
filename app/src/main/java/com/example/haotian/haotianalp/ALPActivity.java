@@ -214,7 +214,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
             default:
                 //no relevant sensor data
         }
-        //Do we write to the bufferedWriter here? Only one sensor is being recoreded at a time here?
+        //Do we write to the bufferedWriter here? Only one sensor is being recorded at a time here?
         //maybe write to the bufferedWriter when every element of the array is nonnull?
         if (readyToWriteSensor()){
             writeTouchData();
@@ -226,8 +226,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
      * Resets touchData array buy reverting everything to 0,0
      */
     public void resetTouchData(){
-        for(int i=0; i<touchData.length-1; i++){
-            touchData[i] = 0;
+        for(float f : touchData){
+            f = 0;
         }
     }
 
