@@ -46,7 +46,6 @@ public class PatternGenerator
         List<Point> pattern = new ArrayList<Point>();
         List<Point> allNodes = new ArrayList<Point>(mAllNodes);
         //HOMEWORK SECTION 1
-        Log.d("Tag1", "In GetPattern"); //REMOVE BEFORE SUBMISSION
         int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
 
         while (pattern.size() != patternLength) { //iterate until we have a pattern of the right size
@@ -68,22 +67,18 @@ public class PatternGenerator
 
                 if ( pattern.contains(candidate) ){
                     iter.remove();
-                    Log.d("P", "The point: " + candidate.toString() + " already exists in the pattern, breaking"); //REMOVE BEFORE SUBMISSION
                     break;
                 }
                 int deltaX = candidate.x - startPoint.x;
                 int deltaY = candidate.y - startPoint.y;
                 int gcd = Math.abs(computeGcd(deltaX, deltaY));
-                Log.d("Tag1", "Considering candidate: " + candidate.toString() +" from start point: " + startPoint.toString()+ " WITH GCD: " + gcd); //REMOVE BEFORE SUBMISSION
 
                 if (gcd > 1) {
                     for (int j = 1; j < gcd; j++){
                         int unusedX = startPoint.x + deltaX / (gcd * j);
                         int unusedY = startPoint.y + deltaY / (gcd * j);
-                        Log.d("P", "considering point : (" + unusedX + ", "+unusedY); //REMOVE BEFORE SUBMISSION
 
                         if ( (unusedX >= 0 && unusedX <= 2) && (unusedY >= 0 && unusedY <= 2)){
-                            Log.d("P", "Point : (" + unusedX + ", "+unusedY + " is a valid point, removing: " + candidate.toString() ); //REMOVE BEFORE SUBMISSION
                             iter.remove();
                         }
                     }
@@ -95,9 +90,6 @@ public class PatternGenerator
             allNodes.remove(toAdd);
         }
 
-        for (Point p : pattern){
-            Log.d("P", p.toString());
-        }
         return pattern;
     }
 

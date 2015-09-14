@@ -119,7 +119,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         file = new File(dcim, "touchdata.csv"); //fileName
         try {
             bufferedWriter = new BufferedWriter( new FileWriter(file) );
-            String[] headings = {"position_X", "position_Y", "velocity_X", "velocity_Y", "pressure", "size", "timestamp",
+            String[] headings = {"timestamp", "position_X", "position_Y", "velocity_X", "velocity_Y", "pressure", "size",
                     "TYPE_ACCELEROMETER_X", "TYPE_ACCELEROMETERY", "TYPE_ACCELEROMETER_Z",
                     "TYPE_MAGNETIC_FIELD_X", "TYPE_MAGNETIC_FIELD_Y", "TYPE_MAGNETIC_FIELD_Z", "TYPE_GRYOSCOPE_X",
                     "TYPE_GRYOSCOPE_Y", "TYPE_GRYOSCOPE_Z", "TYPE_ROTATION_VECTOR_X", "TYPE_ROTATION_VECTOR_Y",
@@ -156,31 +156,26 @@ public class ALPActivity extends Activity implements SensorEventListener{
         mSensorManager.registerListener(this, myLinearAcc, SensorManager.SENSOR_DELAY_NORMAL   );
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL );
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-
-
     }
 
     public boolean onTouchEvent(MotionEvent event){
-        //if the app is not in practice mode, then we dont care about the touch data
-        if(!mPatternView.mPracticeMode){
-            return super.onTouchEvent(event);
-        }
+        Log.d("ERROR", "GOT HERE");
 
         int action = event.getActionMasked();
         VelocityTracker velocity = VelocityTracker.obtain();
 
         switch(action) {
             case (MotionEvent.ACTION_DOWN):
-               // Log.d("DEBUG_TAG", "Action was DOWN " + String.valueOf(event.getX()) + ", " + String.valueOf(event.getY()));
+               // Log.d("DEBUG_TAG", "ACTION DOWN");
                 event.getX();
                 event.getY();
                 event.getPressure();
                 setTouchData(event.getX(), event.getY(), 0, 0, event.getPressure(), event.getSize()); // is there no movement on Action down?
                 // WRITE TO CSV
                 writeTouchData();
-                return true;
+                break;
             case (MotionEvent.ACTION_MOVE) :
-              //  Log.d("DEBUG_TAG","Action was MOVE");
+                //Log.d("DEBUG_TAG","Action was MOVE");
                 velocity.addMovement(event);
                 velocity.computeCurrentVelocity(1000);
                 float xVelocity = velocity.getXVelocity();
@@ -188,14 +183,16 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 setTouchData(event.getX(), event.getY(), xVelocity, yVelocity, event.getPressure(), event.getSize());
                 //WRITE TO CSV
                 writeTouchData();
-                return true;
+                break;
             case (MotionEvent.ACTION_UP):
                 //The motion is finished, write the data if the pattern is correct
+                Log.d("IDK", "ACTION FINISHED, TRYING TO WRITE");
                 writeToFile();
-                return true;
+                break;
             default :
                 return super.onTouchEvent(event);
         }
+        return true;
     }
 
     @Override
@@ -240,6 +237,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         // Do something here if sensor accuracy changes;
     }
 
+
     public void setTouchData(float x, float y, float velX, float velY, float pressure, float size){
         touchData[1] = x;
         touchData[2] = y;
@@ -258,7 +256,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         tempTouchData.append(counter);
         tempTouchData.append('\n');
 
-        Log.d("IO", "WROTE to the csv file: "+ tempTouchData.toString());
+        //Log.d("IO", "WROTE to the csv file: "+ tempTouchData.toString());
     }
 
     /**
@@ -269,9 +267,12 @@ public class ALPActivity extends Activity implements SensorEventListener{
             try{
                 bufferedWriter.write(tempTouchData.toString());
                 bufferedWriter.flush();
+                Log.d("SUCCESS", "WROTE TO THE CSV FILE");
             }catch (java.io.IOException e){
                 //
             }
+        } else {
+            Log.d("FAILURE", "INVALID PATTERN. NOT WRTTING THIS SHIT");
         }
         //if the test result is false, just dump the data
         //we also want to dump the data after the bufferedwriter writes
