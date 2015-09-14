@@ -192,6 +192,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
             default :
                 return super.onTouchEvent(event);
         }
+        
         return true;
     }
 
