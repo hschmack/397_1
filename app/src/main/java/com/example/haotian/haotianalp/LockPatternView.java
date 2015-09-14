@@ -265,6 +265,16 @@ public class LockPatternView extends View
         }
     }
 
+    //create local object of touchDataListener to pass data to Activity
+    private TouchDataListener local;
+
+    //getter and setter methods for touchDataListener
+    public void setTouchDataListener(TouchDataListener touchDataListenr){
+        this.local = touchDataListenr;
+    }
+    public TouchDataListener getTouchDataListener(){
+        return this.local;
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event)
@@ -347,6 +357,10 @@ public class LockPatternView extends View
                 return super.onTouchEvent(event);
         }
         invalidate();
+        // pass touch data to Activity
+        if(getTouchDataListener()!=null){
+            getTouchDataListener().onGridTouch(event);
+        }
         return true;
     }
 
@@ -562,5 +576,9 @@ public class LockPatternView extends View
         {
             return NodeDrawable.STATE_CORRECT;
         }
+    }
+
+    public interface TouchDataListener{
+        void onGridTouch(MotionEvent event);
     }
 }

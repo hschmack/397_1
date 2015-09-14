@@ -68,7 +68,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     private int control = 0;
     DateFormat mDateFormat;
     String mTimestamp;
-    private int counter=0;
+    private int counter=-1;
     private String myStr = "";
     private float[] touchData;
     @Override
@@ -90,7 +90,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 //
                 mPatternView.setPattern(mGenerator.getPattern());
                 mPatternView.invalidate();
-                if( counter != 0 ){ counter++; }
+                counter++;
             }
         });
 
@@ -156,11 +156,17 @@ public class ALPActivity extends Activity implements SensorEventListener{
         mSensorManager.registerListener(this, myLinearAcc, SensorManager.SENSOR_DELAY_NORMAL   );
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL );
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+        mPatternView.setTouchDataListener(new LockPatternView.TouchDataListener() {
+            @Override
+            public void onGridTouch(MotionEvent event) {
+                logTouchEvent((event));
+            }
+        });
     }
 
-    public boolean onTouchEvent(MotionEvent event){
-        Log.d("ERROR", "GOT HERE");
 
+    public void logTouchEvent(MotionEvent event){
         int action = event.getActionMasked();
         VelocityTracker velocity = VelocityTracker.obtain();
 
@@ -190,10 +196,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 writeToFile();
                 break;
             default :
-                return super.onTouchEvent(event);
+                //
         }
-        
-        return true;
     }
 
     @Override
@@ -201,7 +205,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         //array order is: Timestamp, AccelX, AccelY, AccelZ, MagnetX, MagnetY, MagnetZ,
         // GyroscopeX, GyroscopeY, GyroscopeZ, RotationVecX, RoationVecY, RotationVecZ
         // LinAccX, LinAccY, LinAccZ, GravX, GravY, gravZ
-        touchData[0] = event.timestamp;
+        touchData[0] = event.timestamp / 1000000000;
 
         switch(event.sensor.getType()){ //TIMESTAMP IS ALWAYS 6
             case(Sensor.TYPE_ACCELEROMETER): //indices 7,8,9
@@ -253,11 +257,10 @@ public class ALPActivity extends Activity implements SensorEventListener{
             tempTouchData.append(data);
             tempTouchData.append(',');
         }
+        //because we made the array float[] instead of String[] and dont want to change 25 lines of code
         tempTouchData.append(convertListToString(mPatternView.getPattern()) + ',');
-        tempTouchData.append(counter);
+        tempTouchData.append(String.valueOf(counter));
         tempTouchData.append('\n');
-
-        //Log.d("IO", "WROTE to the csv file: "+ tempTouchData.toString());
     }
 
     /**
@@ -273,7 +276,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 //
             }
         } else {
-            Log.d("FAILURE", "INVALID PATTERN. NOT WRTTING THIS SHIT");
+            Log.d("FAILURE", "Invalid Pattern: Not Writing TO File");
         }
         //if the test result is false, just dump the data
         //we also want to dump the data after the bufferedwriter writes
@@ -298,7 +301,12 @@ public class ALPActivity extends Activity implements SensorEventListener{
     protected void onResume()
     {
         super.onResume();
-
+        mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL      );
+        mSensorManager.registerListener(this, mRotation, SensorManager.SENSOR_DELAY_NORMAL     );
+        mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL    );
+        mSensorManager.registerListener(this, myLinearAcc, SensorManager.SENSOR_DELAY_NORMAL   );
+        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL );
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
         updateFromPrefs();
     }
@@ -312,7 +320,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
     @Override
     protected void onPause() {
-
+        mSensorManager.unregisterListener(this);
         super.onPause();
 
     }
