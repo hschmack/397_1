@@ -109,6 +109,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 });
         //We will use this StringBuilder to temporarily store our touchData
         tempTouchData = new StringBuilder();
+
         //initialize the bufferedWriter
         File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         File myFile = new File(dcim, "touchdata.csv");
@@ -173,9 +174,6 @@ public class ALPActivity extends Activity implements SensorEventListener{
         switch(action) {
             case (MotionEvent.ACTION_DOWN):
                // Log.d("DEBUG_TAG", "ACTION DOWN");
-                event.getX();
-                event.getY();
-                event.getPressure();
                 setTouchData(event.getX(), event.getY(), 0, 0, event.getPressure(), event.getSize()); // is there no movement on Action down?
                 // WRITE TO CSV
                 writeTouchData();
@@ -192,7 +190,6 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 break;
             case (MotionEvent.ACTION_UP):
                 //The motion is finished, write the data if the pattern is correct
-                Log.d("IDK", "ACTION FINISHED, TRYING TO WRITE");
                 writeToFile();
                 break;
             default :
@@ -202,9 +199,6 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
     @Override
     public final void onSensorChanged (SensorEvent event){
-        //array order is: Timestamp, AccelX, AccelY, AccelZ, MagnetX, MagnetY, MagnetZ,
-        // GyroscopeX, GyroscopeY, GyroscopeZ, RotationVecX, RoationVecY, RotationVecZ
-        // LinAccX, LinAccY, LinAccZ, GravX, GravY, gravZ
         touchData[0] = event.timestamp / 1000000000;
 
         switch(event.sensor.getType()){ //TIMESTAMP IS ALWAYS 6
