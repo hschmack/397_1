@@ -63,6 +63,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     private File file;
     public static String[] mLine;
     public BufferedWriter bufferedWriter;
+    public StringBuilder tempTouchData;
     private VelocityTracker mVelocityTracker = null;
     private int control = 0;
     DateFormat mDateFormat;
@@ -89,6 +90,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 //
                 mPatternView.setPattern(mGenerator.getPattern());
                 mPatternView.invalidate();
+                if( counter != 0 ){ counter++; }
             }
         });
 
@@ -105,7 +107,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
                     }
                 });
-
+        //We will use this StringBuilder to temporarily store our touchData
+        tempTouchData = new StringBuilder();
         //initialize the bufferedWriter
         File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         File myFile = new File(dcim, "touchdata.csv");
@@ -121,8 +124,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                     "TYPE_MAGNETIC_FIELD_X", "TYPE_MAGNETIC_FIELD_Y", "TYPE_MAGNETIC_FIELD_Z", "TYPE_GRYOSCOPE_X",
                     "TYPE_GRYOSCOPE_Y", "TYPE_GRYOSCOPE_Z", "TYPE_ROTATION_VECTOR_X", "TYPE_ROTATION_VECTOR_Y",
                     "TYPE_ROTATION_VECTOR_Z", "TYPE_LINEAR_ACCELERATION_X", "TYPE_LINEAR_ACCELERATION_Y",
-                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z", "mCurrentPattern", "Counter"
-            };
+                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z", "mCurrentPattern", "Counter"};
 
             //initialize the first row of the csv, this row only contains column headings
             StringBuilder sb = new StringBuilder();
@@ -187,6 +189,10 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 //WRITE TO CSV
                 writeTouchData();
                 return true;
+            case (MotionEvent.ACTION_UP):
+                //The motion is finished, write the data if the pattern is correct
+                writeToFile();
+                return true;
             default :
                 return super.onTouchEvent(event);
         }
@@ -244,21 +250,32 @@ public class ALPActivity extends Activity implements SensorEventListener{
     }
 
     public void writeTouchData(){
-        StringBuilder sb = new StringBuilder();
-        try {
-            for (float data : touchData){
-                sb.append(data);
-                sb.append(',');
-            }
-            sb.append(convertListToString(mPatternView.getPattern()) + ',');
-            sb.append(counter);
-            sb.append('\n');
-            bufferedWriter.write(sb.toString());
-            bufferedWriter.flush();
-            Log.d("IO", "WROTE to the csv file: "+ sb.toString());
-        } catch (java.io.IOException e){
-            Log.d("IO", "Failed to write to the csv file");
+        for (float data : touchData){
+            tempTouchData.append(data);
+            tempTouchData.append(',');
         }
+        tempTouchData.append(convertListToString(mPatternView.getPattern()) + ',');
+        tempTouchData.append(counter);
+        tempTouchData.append('\n');
+
+        Log.d("IO", "WROTE to the csv file: "+ tempTouchData.toString());
+    }
+
+    /**
+     * Write to touchdata.csv IF the pattern entered on patternview is correct
+     */
+    public void writeToFile(){
+        if( mPatternView.testResult.equals("true") ){
+            try{
+                bufferedWriter.write(tempTouchData.toString());
+                bufferedWriter.flush();
+            }catch (java.io.IOException e){
+                //
+            }
+        }
+        //if the test result is false, just dump the data
+        //we also want to dump the data after the bufferedwriter writes
+        tempTouchData.setLength(0);
     }
 
     // there HAS to be a way to do this natively
