@@ -32,6 +32,7 @@ public class PatternGenerator
     protected int mMaxNodes;
     protected Random mRng;
     protected List<Point> mAllNodes;
+    protected int patternToUse;
 
     public PatternGenerator()
     {
@@ -39,6 +40,7 @@ public class PatternGenerator
         setGridLength(0);
         setMinNodes(0);
         setMaxNodes(0);
+        this.patternToUse = 0;
     }
 
     public List<Point> getPattern()
@@ -46,11 +48,11 @@ public class PatternGenerator
         List<Point> pattern = new ArrayList<Point>();
         List<Point> allNodes = new ArrayList<Point>(mAllNodes);
         //HOMEWORK SECTION 1
-        List<Point> pattern1 = setPattern(0);
-        List<Point> pattern2 = setPattern(1);
-        List<Point> pattern3 = setPattern(2);
-        List<Point> pattern4 = setPattern(3);
-        return pattern1;
+        List<Point> preSetPattern = setPattern(this.patternToUse);
+//        Log.d("debug", "Using pattern: " + this.patternToUse);
+        this.patternToUse++;
+        if(this.patternToUse > 3){this.patternToUse = 0;}
+        return preSetPattern;
 
 
 //        int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
