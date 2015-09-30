@@ -52,6 +52,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     protected int mPatternMax=0;
     protected String mHighlightMode;
     protected boolean mTactileFeedback;
+    private final String[] numArr = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twentyone", "twentytwo", "twentythree", "twentyfour", "twentyfive", "twentysix", "twentyseven", "twentyeight", "twentynine", "thirty", "thirtyone", "thirtytwo", "thirtythree", "thirtyfour", "thirtyfive", "thirtysix", "thirtyseven", "thirtyeight", "thirtynine", "fourty", "fourtyone", "fourtytwo", "fourtythree", "fourtyfour", "fourtyfive", "fourtysix", "fourtyseven", "fourtyeight", "fourtynine", "fifty"};
 
     private static final String TAG = "SensorActivity";
     private static final String TAGmotion = "motionEvent";
@@ -69,7 +70,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     private int control = 0;
     DateFormat mDateFormat;
     String mTimestamp;
-    private int counter=-1;
+    private int counter=0;
     private String myStr = "";
     private float[] touchData;
     private String userLabel = "A";
@@ -94,7 +95,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 mPatternView.setPattern(mGenerator.getPattern());
                 mPatternView.invalidate();
                 //counter++;
-                counter = -1; //reset the attempt at unlocking
+                counter = 0; //reset the attempt at unlocking
             }
         });
 
@@ -267,7 +268,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         //because we made the array float[] instead of String[] and dont want to change 25 lines of code
         tempTouchData.append(convertListToString(mPatternView.getPattern()) + ',');
         tempTouchData.append(userLabel + ',');
-        tempTouchData.append(String.valueOf(counter));
+        tempTouchData.append(numArr[counter]);
         tempTouchData.append('\n');
     }
 
