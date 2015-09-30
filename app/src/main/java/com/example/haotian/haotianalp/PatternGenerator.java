@@ -46,52 +46,97 @@ public class PatternGenerator
         List<Point> pattern = new ArrayList<Point>();
         List<Point> allNodes = new ArrayList<Point>(mAllNodes);
         //HOMEWORK SECTION 1
-        int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
+        List<Point> pattern1 = setPattern(0);
+        List<Point> pattern2 = setPattern(1);
+        List<Point> pattern3 = setPattern(2);
+        List<Point> pattern4 = setPattern(3);
+        return pattern1;
 
-        while (pattern.size() != patternLength) { //iterate until we have a pattern of the right size
-            Point startPoint;
-            if( pattern.isEmpty() ) {
-                startPoint = allNodes.get(mRng.nextInt(mAllNodes.size()));
-                pattern.add(startPoint);
-            } else {
-                startPoint = pattern.get( pattern.size() - 1 );
-            }
-            // now that the initial point is chosen, remove it from the list of available nodes
-            allNodes.remove(startPoint);
-            List<Point> candidateList = new ArrayList<Point>(allNodes);
 
-            // REMOVE 'UNUSED' POINTS + points already in the pattern
-            Iterator<Point> iter = candidateList.iterator();
-            while (iter.hasNext()) {
-                Point candidate = iter.next();
-
-                if ( pattern.contains(candidate) ){
-                    iter.remove();
-                    break;
-                }
-                int deltaX = candidate.x - startPoint.x;
-                int deltaY = candidate.y - startPoint.y;
-                int gcd = Math.abs(computeGcd(deltaX, deltaY));
-
-                if (gcd > 1) {
-                    for (int j = 1; j < gcd; j++){
-                        int unusedX = startPoint.x + deltaX / (gcd * j);
-                        int unusedY = startPoint.y + deltaY / (gcd * j);
-
-                        if ( (unusedX >= 0 && unusedX <= 2) && (unusedY >= 0 && unusedY <= 2)){
-                            iter.remove();
-                        }
-                    }
-                }
-            }
-            //this should add a valid point to the pattern
-            Point toAdd = candidateList.get (mRng.nextInt( candidateList.size()) );
-            pattern.add(toAdd);
-            allNodes.remove(toAdd);
-        }
-
-        return pattern;
+//        int patternLength = mMaxNodes - mRng.nextInt(mMinNodes);
+//
+//        while (pattern.size() != patternLength) { //iterate until we have a pattern of the right size
+//            Point startPoint;
+//            if( pattern.isEmpty() ) {
+//                startPoint = allNodes.get(mRng.nextInt(mAllNodes.size()));
+//                pattern.add(startPoint);
+//            } else {
+//                startPoint = pattern.get( pattern.size() - 1 );
+//            }
+//            // now that the initial point is chosen, remove it from the list of available nodes
+//            allNodes.remove(startPoint);
+//            List<Point> candidateList = new ArrayList<Point>(allNodes);
+//
+//            // REMOVE 'UNUSED' POINTS + points already in the pattern
+//            Iterator<Point> iter = candidateList.iterator();
+//            while (iter.hasNext()) {
+//                Point candidate = iter.next();
+//
+//                if ( pattern.contains(candidate) ){
+//                    iter.remove();
+//                    break;
+//                }
+//                int deltaX = candidate.x - startPoint.x;
+//                int deltaY = candidate.y - startPoint.y;
+//                int gcd = Math.abs(computeGcd(deltaX, deltaY));
+//
+//                if (gcd > 1) {
+//                    for (int j = 1; j < gcd; j++){
+//                        int unusedX = startPoint.x + deltaX / (gcd * j);
+//                        int unusedY = startPoint.y + deltaY / (gcd * j);
+//
+//                        if ( (unusedX >= 0 && unusedX <= 2) && (unusedY >= 0 && unusedY <= 2)){
+//                            iter.remove();
+//                        }
+//                    }
+//                }
+//            }
+//            //this should add a valid point to the pattern
+//            Point toAdd = candidateList.get (mRng.nextInt( candidateList.size()) );
+//            pattern.add(toAdd);
+//            allNodes.remove(toAdd);
+//        }
+//
+//        return pattern;
     }
+
+    public ArrayList<Point> setPattern(int patternNum){
+        ArrayList<Point> newPattern = new ArrayList<Point>();
+        switch(patternNum){
+            case 0:
+                newPattern.add(new Point(0,1));
+                newPattern.add(new Point(1,2));
+                newPattern.add(new Point(2,1));
+                newPattern.add(new Point(1,0));
+                break;
+            case 1:
+                newPattern.add(new Point(0,0));
+                newPattern.add(new Point(1,0));
+                newPattern.add(new Point(2,0));
+                newPattern.add(new Point(1,1));
+                newPattern.add(new Point(0,2));
+                break;
+            case 2:
+                newPattern.add(new Point(0,1));
+                newPattern.add(new Point(1,1));
+                newPattern.add(new Point(2,1));
+                newPattern.add(new Point(2,0));
+                newPattern.add(new Point(1,0));
+                newPattern.add(new Point(0,0));
+                break;
+            case 3:
+                newPattern.add(new Point(1,0));
+                newPattern.add(new Point(1,1));
+                newPattern.add(new Point(0,2));
+                newPattern.add(new Point(0,1));
+                break;
+
+            default:
+                //nothing
+        }
+        return newPattern;
+    }
+
 
     //
     // Accessors / Mutators

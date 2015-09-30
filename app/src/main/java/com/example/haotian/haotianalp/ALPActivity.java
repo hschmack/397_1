@@ -44,6 +44,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     protected Button mGenerateButton;
     protected Button mDesigner;
     protected ToggleButton mPracticeToggle;
+    protected ToggleButton mUserToggle;
     private List<Point> mEasterEggPattern;
     protected SharedPreferences mPreferences;
     protected int mGridLength=0;
@@ -71,6 +72,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
     private int counter=-1;
     private String myStr = "";
     private float[] touchData;
+    private String userLabel = "A";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,18 +86,20 @@ public class ALPActivity extends Activity implements SensorEventListener{
         setContentView(R.layout.activity_alp);
         mPatternView = (LockPatternView) findViewById(R.id.pattern_view);
         mGenerateButton = (Button) findViewById(R.id.generate_button);
-        touchData = new float[25]; //posX posY velX velY pressure size + all sensor data
+        touchData = new float[24]; //posX posY velX velY pressure size + all sensor data
 
         mGenerateButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v){
                 //
                 mPatternView.setPattern(mGenerator.getPattern());
                 mPatternView.invalidate();
-                counter++;
+                //counter++;
+                counter = -1; //reset the attempt at unlocking
             }
         });
 
         mPracticeToggle = (ToggleButton) findViewById(R.id.practice_toggle);
+        mUserToggle = (ToggleButton) findViewById(R.id.user_toggle);
 
 
         mPracticeToggle.setOnCheckedChangeListener(
@@ -104,6 +109,15 @@ public class ALPActivity extends Activity implements SensorEventListener{
                         mPatternView.setPracticeMode(isChecked);
                         mGenerateButton.setEnabled(!isChecked);
                         mPatternView.invalidate();
+
+                    }
+                });
+
+        mUserToggle.setOnCheckedChangeListener(
+                new ToggleButton.OnCheckedChangeListener() {
+                    public void onCheckedChanged(CompoundButton buttonView,
+                                                 boolean isChecked) {
+                        userLabel = (!isChecked) ? "A" : "B";
 
                     }
                 });
@@ -120,12 +134,12 @@ public class ALPActivity extends Activity implements SensorEventListener{
         file = new File(dcim, "touchdata.csv"); //fileName
         try {
             bufferedWriter = new BufferedWriter( new FileWriter(file) );
-            String[] headings = {"timestamp", "position_X", "position_Y", "velocity_X", "velocity_Y", "pressure", "size",
+            String[] headings = { "position_X", "position_Y", "velocity_X", "velocity_Y", "pressure", "size",
                     "TYPE_ACCELEROMETER_X", "TYPE_ACCELEROMETERY", "TYPE_ACCELEROMETER_Z",
                     "TYPE_MAGNETIC_FIELD_X", "TYPE_MAGNETIC_FIELD_Y", "TYPE_MAGNETIC_FIELD_Z", "TYPE_GRYOSCOPE_X",
                     "TYPE_GRYOSCOPE_Y", "TYPE_GRYOSCOPE_Z", "TYPE_ROTATION_VECTOR_X", "TYPE_ROTATION_VECTOR_Y",
                     "TYPE_ROTATION_VECTOR_Z", "TYPE_LINEAR_ACCELERATION_X", "TYPE_LINEAR_ACCELERATION_Y",
-                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z", "mCurrentPattern", "Counter"};
+                    "TYPE_LINEAR_ACCELERATION_Z","TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z", "mCurrentPattern", "Label","Counter"};
 
             //initialize the first row of the csv, this row only contains column headings
             StringBuilder sb = new StringBuilder();
@@ -199,33 +213,32 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
     @Override
     public final void onSensorChanged (SensorEvent event){
-        touchData[0] = event.timestamp / 1000000000;
 
-        switch(event.sensor.getType()){ //TIMESTAMP IS ALWAYS 6
-            case(Sensor.TYPE_ACCELEROMETER): //indices 7,8,9
-                touchData[7] = event.values[0];
-                touchData[8] = event.values[1];
-                touchData[9] = event.values[2];
-            case(Sensor.TYPE_MAGNETIC_FIELD): //indices 10,11,12
-                touchData[10] = event.values[0];
-                touchData[11] = event.values[1];
-                touchData[12] = event.values[2];
-            case(Sensor.TYPE_GYROSCOPE): //indices 13,14,15
-                touchData[13] = event.values[0];
-                touchData[14] = event.values[1];
-                touchData[15] = event.values[2];
-            case(Sensor.TYPE_ROTATION_VECTOR): //indices 16,17,18
-                touchData[16] = event.values[0];
-                touchData[17] = event.values[1];
-                touchData[18] = event.values[2];
-            case(Sensor.TYPE_LINEAR_ACCELERATION): //indices 19,20,21
-                touchData[19] = event.values[0];
-                touchData[20] = event.values[1];
-                touchData[21] = event.values[2];
-            case(Sensor.TYPE_GRAVITY): //indices 22,23,24
-                touchData[22] = event.values[0];
-                touchData[23] = event.values[1];
-                touchData[24] = event.values[2];
+        switch(event.sensor.getType()){
+            case(Sensor.TYPE_ACCELEROMETER):
+                touchData[6] = event.values[0];
+                touchData[7] = event.values[1];
+                touchData[8] = event.values[2];
+            case(Sensor.TYPE_MAGNETIC_FIELD):
+                touchData[9] = event.values[0];
+                touchData[10] = event.values[1];
+                touchData[11] = event.values[2];
+            case(Sensor.TYPE_GYROSCOPE):
+                touchData[12] = event.values[0];
+                touchData[13] = event.values[1];
+                touchData[14] = event.values[2];
+            case(Sensor.TYPE_ROTATION_VECTOR):
+                touchData[15] = event.values[0];
+                touchData[16] = event.values[1];
+                touchData[17] = event.values[2];
+            case(Sensor.TYPE_LINEAR_ACCELERATION):
+                touchData[18] = event.values[0];
+                touchData[19] = event.values[1];
+                touchData[20] = event.values[2];
+            case(Sensor.TYPE_GRAVITY):
+                touchData[21] = event.values[0];
+                touchData[22] = event.values[1];
+                touchData[23] = event.values[2];
             default:
                 //no relevant sensor data
         }
@@ -238,12 +251,12 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
 
     public void setTouchData(float x, float y, float velX, float velY, float pressure, float size){
-        touchData[1] = x;
-        touchData[2] = y;
-        touchData[3] = velX;
-        touchData[4] = velY;
-        touchData[5] = pressure;
-        touchData[6] = size;
+        touchData[0] = x;
+        touchData[1] = y;
+        touchData[2] = velX;
+        touchData[3] = velY;
+        touchData[4] = pressure;
+        touchData[5] = size;
     }
 
     public void writeTouchData(){
@@ -253,6 +266,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         }
         //because we made the array float[] instead of String[] and dont want to change 25 lines of code
         tempTouchData.append(convertListToString(mPatternView.getPattern()) + ',');
+        tempTouchData.append(userLabel + ',');
         tempTouchData.append(String.valueOf(counter));
         tempTouchData.append('\n');
     }
@@ -265,6 +279,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
             try{
                 bufferedWriter.write(tempTouchData.toString());
                 bufferedWriter.flush();
+                counter++;
+                Log.d("NUMBER ATTEMPTS", "Solution " + counter);
                 Log.d("SUCCESS", "WROTE TO THE CSV FILE");
             }catch (java.io.IOException e){
                 //
