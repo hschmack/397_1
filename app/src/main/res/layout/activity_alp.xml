@@ -53,5 +53,12 @@ You should have received a copy of the GNU General Public License along with
         android:textOn="@string/Erwin"
         android:textOff="@string/Hayden" />
 
+    <Button
+        android:id="@+id/process_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/preprocess_label"
+        android:clickable="true" />
+
 
 </LinearLayout>

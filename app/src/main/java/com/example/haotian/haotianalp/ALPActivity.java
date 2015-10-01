@@ -23,6 +23,8 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import java.io.BufferedWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,6 +45,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     protected LockPatternView mPatternView;
     protected PatternGenerator mGenerator;
     protected Button mGenerateButton;
+    protected Button mProcessButton;
     protected Button mDesigner;
     protected ToggleButton mPracticeToggle;
     protected ToggleButton mUserToggle;
@@ -65,6 +69,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
     private File file;
     public static String[] mLine;
     public BufferedWriter bufferedWriter;
+    public BufferedWriter processerWriter;
+    public BufferedReader bufferedReader;
     public StringBuilder tempTouchData;
     private VelocityTracker mVelocityTracker = null;
     private int control = 0;
@@ -74,6 +80,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
     private String myStr = "";
     private float[] touchData;
     private String userLabel = "Hayden";
+    boolean processHeadersWritten;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,13 +88,14 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
 
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
+        processHeadersWritten = false;
         mGenerator = new PatternGenerator();
 
         setContentView(R.layout.activity_alp);
         mPatternView = (LockPatternView) findViewById(R.id.pattern_view);
         mGenerateButton = (Button) findViewById(R.id.generate_button);
-        touchData = new float[46]; //posX posY velX velY pressure size + all sensor data
+        mProcessButton = (Button) findViewById(R.id.process_button);
+        touchData = new float[24]; //posX posY velX velY pressure size + all sensor data
 
         mGenerateButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v){
@@ -95,7 +103,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
                 mPatternView.setPattern(mGenerator.getPattern());
                 mPatternView.invalidate();
                 //counter++;
-                counter = 0; //reset the attempt at unlocking
+                //counter = 0; //reset the attempt at unlocking
             }
         });
 
@@ -119,9 +127,9 @@ public class ALPActivity extends Activity implements SensorEventListener{
                     public void onCheckedChanged(CompoundButton buttonView,
                                                  boolean isChecked) {
                         userLabel = (!isChecked) ? "Hayden" : "Erwin";
-
                     }
                 });
+
         //We will use this StringBuilder to temporarily store our touchData
         tempTouchData = new StringBuilder();
 
@@ -132,28 +140,69 @@ public class ALPActivity extends Activity implements SensorEventListener{
             myFile.delete(); //delete the touch data file if it already exists
         }
         //then create a new one
-        file = new File(dcim, "touchdata.csv"); //fileName
+        file = new File(dcim, "touchdata.csv");
+        //set Process Button, declare reader.
+        mProcessButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                try {
+                    bufferedReader = new BufferedReader(new FileReader(file));
+                    processData();
+                } catch (java.io.FileNotFoundException e){
+                    Log.d("ERROR", "failed to create bufferedReader");
+                    e.printStackTrace();
+                }
+            }
+        });
         try {
             bufferedWriter = new BufferedWriter( new FileWriter(file) );
             String[] headings = { "position_X", "position_Y",
+                    "velocity_X", "velocity_Y",
+                    "pressure", "size",
+                    "TYPE_ACCELEROMETER_X", "TYPE_ACCELEROMETERY", "TYPE_ACCELEROMETER_Z",
+                    "TYPE_MAGNETIC_FIELD_X", "TYPE_MAGNETIC_FIELD_Y", "TYPE_MAGNETIC_FIELD_Z",
+                    "TYPE_GRYOSCOPE_X", "TYPE_GRYOSCOPE_Y", "TYPE_GRYOSCOPE_Z",
+                    "TYPE_ROTATION_VECTOR_X", "TYPE_ROTATION_VECTOR_Y", "TYPE_ROTATION_VECTOR_Z",
+                    "TYPE_LINEAR_ACCELERATION_X", "TYPE_LINEAR_ACCELERATION_Y","TYPE_LINEAR_ACCELERATION_Z",
+                    "TYPE_GRAVITY_X", "TYPE_GRAVITY_Y", "TYPE_GRAVITY_Z",
+                    "mCurrentPattern", "Label","Counter"};
+
+            //initialize the first row of the csv, this row only contains column headings
+            StringBuilder sb = new StringBuilder();
+            for (String heading : headings) {
+                sb.append(heading);
+                sb.append(',');
+            }
+            sb.append("\n");
+            bufferedWriter.write(sb.toString());
+            bufferedWriter.flush();
+
+            File pFile = new File(dcim, "processed_data.csv");
+            if (pFile.exists()){
+                pFile.delete(); //delete the touch data file if it already exists
+            }
+            //then create a new one
+            File newPFile = new File(dcim, "processed_data.csv"); //fileName
+
+            processerWriter = new BufferedWriter(new FileWriter(newPFile));
+            String[] pheadings = {
                     "velocity_X_mean", "velocity_X_std",
-                    "velocity_Y_mean","velocity_Y_std",
-                    "pressure_mean","pressure_std",
-                    "size_mean","size_std",
-                    "TYPE_ACCELEROMETER_X_mean","TYPE_ACCELEROMETER_X_std",
-                    "TYPE_ACCELEROMETERY_mean","TYPE_ACCELEROMETERY_std",
-                    "TYPE_ACCELEROMETER_Z_mean","TYPE_ACCELEROMETER_Z_std",
-                    "TYPE_MAGNETIC_FIELD_X_mean","TYPE_MAGNETIC_FIELD_X_std",
-                    "TYPE_MAGNETIC_FIELD_Y_mean","TYPE_MAGNETIC_FIELD_Y_std",
-                    "TYPE_MAGNETIC_FIELD_Z_mean","TYPE_MAGNETIC_FIELD_Z_std",
-                    "TYPE_GRYOSCOPE_X_mean","TYPE_GRYOSCOPE_X_std",
-                    "TYPE_GRYOSCOPE_Y_mean","TYPE_GRYOSCOPE_Y_std",
-                    "TYPE_GRYOSCOPE_Z_mean","TYPE_GRYOSCOPE_Z_std",
+                    "velocity_Y_mean", "velocity_Y_std",
+                    "pressure_mean", "pressure_std",
+                    "size_mean", "size_std",
+                    "TYPE_ACCELEROMETER_X_mean", "TYPE_ACCELEROMETER_X_std",
+                    "TYPE_ACCELEROMETERY_mean", "TYPE_ACCELEROMETERY_std",
+                    "TYPE_ACCELEROMETER_Z_mean", "TYPE_ACCELEROMETER_Z_std",
+                    "TYPE_MAGNETIC_FIELD_X_mean", "TYPE_MAGNETIC_FIELD_X_std",
+                    "TYPE_MAGNETIC_FIELD_Y_mean", "TYPE_MAGNETIC_FIELD_Y_std",
+                    "TYPE_MAGNETIC_FIELD_Z_mean", "TYPE_MAGNETIC_FIELD_Z_std",
+                    "TYPE_GRYOSCOPE_X_mean", "TYPE_GRYOSCOPE_X_std",
+                    "TYPE_GRYOSCOPE_Y_mean", "TYPE_GRYOSCOPE_Y_std",
+                    "TYPE_GRYOSCOPE_Z_mean", "TYPE_GRYOSCOPE_Z_std",
                     "TYPE_ROTATION_VECTOR_X_mean", "TYPE_ROTATION_VECTOR_X_std",
                     "TYPE_ROTATION_VECTOR_Y_mean", "TYPE_ROTATION_VECTOR_Y_std",
-                    "TYPE_ROTATION_VECTOR_Z_mean","TYPE_ROTATION_VECTOR_Z_std",
+                    "TYPE_ROTATION_VECTOR_Z_mean", "TYPE_ROTATION_VECTOR_Z_std",
                     "TYPE_LINEAR_ACCELERATION_X_mean", "TYPE_LINEAR_ACCELERATION_X_std",
-                    "TYPE_LINEAR_ACCELERATION_Y_mean","TYPE_LINEAR_ACCELERATION_Y_std",
+                    "TYPE_LINEAR_ACCELERATION_Y_mean", "TYPE_LINEAR_ACCELERATION_Y_std",
                     "TYPE_LINEAR_ACCELERATION_Z_mean", "TYPE_LINEAR_ACCELERATION_Z_std",
                     "TYPE_GRAVITY_X_mean", "TYPE_GRAVITY_X_std",
                     "TYPE_GRAVITY_Y_mean", "TYPE_GRAVITY_Y_std",
@@ -162,15 +211,16 @@ public class ALPActivity extends Activity implements SensorEventListener{
                     "Label",
                     "Counter"};
 
-            //initialize the first row of the csv, this row only contains column headings
-            StringBuilder sb = new StringBuilder();
-            for (String heading : headings) {
-                sb.append(heading);
-                sb.append(',');
-            }
-                sb.append("\n");
-                bufferedWriter.write(sb.toString());
-                bufferedWriter.flush();
+                //initialize the first row of the csv, this row only contains column headings
+                StringBuilder psb = new StringBuilder();
+
+                for (String pheading : pheadings) {
+                    psb.append(pheading);
+                    psb.append(',');
+                }
+                psb.append("\n");
+                processerWriter.write(psb.toString());
+                processerWriter.flush();
 
         } catch (java.io.IOException e){
             Log.d("IO", "CANT CREATE BUFFERED OR FILE READER");
@@ -234,50 +284,31 @@ public class ALPActivity extends Activity implements SensorEventListener{
 
     @Override
     public final void onSensorChanged (SensorEvent event){
-
         switch(event.sensor.getType()){
             case(Sensor.TYPE_ACCELEROMETER):
-                touchData[10] = event.values[0];
-                touchData[11] = event.values[0];
-                touchData[12] = event.values[1];
+                touchData[6] = event.values[0];
+                touchData[7] = event.values[1];
+                touchData[8] = event.values[2];
+            case(Sensor.TYPE_MAGNETIC_FIELD):
+                touchData[9] = event.values[0];
+                touchData[10] = event.values[1];
+                touchData[11] = event.values[2];
+            case(Sensor.TYPE_GYROSCOPE):
+                touchData[12] = event.values[0];
                 touchData[13] = event.values[1];
                 touchData[14] = event.values[2];
-                touchData[15] = event.values[2];
-            case(Sensor.TYPE_MAGNETIC_FIELD):
-                touchData[16] = event.values[0];
-                touchData[17] = event.values[0];
-                touchData[18] = event.values[1];
+            case(Sensor.TYPE_ROTATION_VECTOR):
+                touchData[15] = event.values[0];
+                touchData[16] = event.values[1];
+                touchData[17] = event.values[2];
+            case(Sensor.TYPE_LINEAR_ACCELERATION):
+                touchData[18] = event.values[0];
                 touchData[19] = event.values[1];
                 touchData[20] = event.values[2];
-                touchData[21] = event.values[2];
-            case(Sensor.TYPE_GYROSCOPE):
-                touchData[22] = event.values[0];
-                touchData[23] = event.values[0];
-                touchData[24] = event.values[1];
-                touchData[25] = event.values[1];
-                touchData[26] = event.values[2];
-                touchData[27] = event.values[2];
-            case(Sensor.TYPE_ROTATION_VECTOR):
-                touchData[28] = event.values[0];
-                touchData[29] = event.values[0];
-                touchData[30] = event.values[1];
-                touchData[31] = event.values[1];
-                touchData[32] = event.values[2];
-                touchData[33] = event.values[2];
-            case(Sensor.TYPE_LINEAR_ACCELERATION):
-                touchData[34] = event.values[0];
-                touchData[35] = event.values[0];
-                touchData[36] = event.values[1];
-                touchData[37] = event.values[1];
-                touchData[38] = event.values[2];
-                touchData[39] = event.values[2];
             case(Sensor.TYPE_GRAVITY):
-                touchData[40] = event.values[0];
-                touchData[41] = event.values[0];
-                touchData[42] = event.values[1];
-                touchData[43] = event.values[1];
-                touchData[44] = event.values[2];
-                touchData[45] = event.values[2];
+                touchData[21] = event.values[0];
+                touchData[22] = event.values[1];
+                touchData[23] = event.values[2];
             default:
                 //no relevant sensor data
         }
@@ -293,13 +324,9 @@ public class ALPActivity extends Activity implements SensorEventListener{
         touchData[0] = x;
         touchData[1] = y;
         touchData[2] = velX;
-        touchData[3] = velX;
-        touchData[4] = velY;
-        touchData[5] = velY;
-        touchData[6] = pressure;
-        touchData[7] = pressure;
-        touchData[8] = size;
-        touchData[9] = size;
+        touchData[3] = velY;
+        touchData[4] = pressure;
+        touchData[5] = size;
     }
 
     public void writeTouchData(){
@@ -310,7 +337,7 @@ public class ALPActivity extends Activity implements SensorEventListener{
         //because we made the array float[] instead of String[] and dont want to change 25 lines of code
         tempTouchData.append(convertListToString(mPatternView.getPattern()) + ',');
         tempTouchData.append(userLabel + ',');
-        tempTouchData.append(numArr[counter]);
+        tempTouchData.append(counter);
         tempTouchData.append('\n');
     }
 
@@ -342,12 +369,85 @@ public class ALPActivity extends Activity implements SensorEventListener{
         sb.append("\"[");
         for(Point p : pattern){
             sb.append(p.toString());
-            sb.append(',');
+            sb.append('-');
         }
         sb.append("]\"");
         return sb.toString();
     }
+    public void processData(){
+        LinkedList<LinkedList<String[]>> rowsWithLabel = new LinkedList<LinkedList<String[]>>(); //im
+        try{
+            String line = bufferedReader.readLine(); //always skip the first line, we dont care about the labels
+            int countIndex = 26;
 
+            while( (line = bufferedReader.readLine()) != null){
+                String[] parsedLine = line.split(",");
+                while (rowsWithLabel.size() <= Integer.valueOf(parsedLine[countIndex]) ) { rowsWithLabel.add(new LinkedList<String[]>()) ;}
+                rowsWithLabel.get(Integer.valueOf( parsedLine[countIndex] )).add(parsedLine);
+            }
+        } catch (java.io.IOException e ){
+            Log.d("ERROR", "error reading from reader");
+            e.printStackTrace();
+        }
+        for (LinkedList<String[]> listOfListofList: rowsWithLabel){
+            calculateMeanThenSTD(listOfListofList);
+        }
+    }
+
+    public void calculateMeanThenSTD (LinkedList<String[]> section){
+        ArrayList<Float> means = new ArrayList<Float>(27);
+        ArrayList<Float> stds = new ArrayList<Float>(27);
+
+        String[] singleRow = section.getFirst();
+        while(means.size() < singleRow.length) { means.add((float)0); stds.add((float)0);}
+        String[] metaData = {singleRow[24], singleRow[25], singleRow[26]};
+
+
+        for(String[] row : section){
+            for(int col = 2; col < 24; col++){
+                float updated = means.get(col) + Float.valueOf(row[col]);
+                means.set(col, updated);
+            }
+        }
+        for (int i = 2; i < 24; i++){
+            float avg = means.get(i) / section.size();
+            means.set(i, avg);
+        }
+
+        //now set the std deviation
+        for(String[] row: section){
+            for(int col = 2; col <24; col++){
+                double updated = Math.pow( (double) (Float.valueOf(row[col]) - means.get(col)), 2);
+                stds.set(col, (float) updated);
+            }
+        }
+
+        for (int i = 2; i < 24; i++){
+            double divNsqrt = (double) stds.get(i) / section.size();
+            divNsqrt = Math.sqrt(divNsqrt);
+            stds.set(i, (float) divNsqrt);
+        }
+
+        //BELOW write to file
+        try{
+
+            StringBuilder psb = new StringBuilder();
+            for(int i=2; i < means.size()-3; i++){
+                psb.append(means.get(i)+",");
+                psb.append(stds.get(i)+",");
+            }
+
+            psb.append(metaData[0] + ",");
+            psb.append(metaData[1] + ",");
+            psb.append(metaData[2]);
+            psb.append("\n");
+            processerWriter.write(psb.toString());
+            processerWriter.flush();
+
+        }catch (java.io.IOException e){
+
+        }
+    }
 
 
     @Override
@@ -357,8 +457,8 @@ public class ALPActivity extends Activity implements SensorEventListener{
         mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL      );
         mSensorManager.registerListener(this, mRotation, SensorManager.SENSOR_DELAY_NORMAL     );
         mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_NORMAL    );
-        mSensorManager.registerListener(this, myLinearAcc, SensorManager.SENSOR_DELAY_NORMAL   );
-        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL );
+        mSensorManager.registerListener(this, myLinearAcc, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
         updateFromPrefs();
